@@ -1,0 +1,116 @@
+---
+title: "Homework on Bass Model"
+author: "Vram Papyan"
+date: "2024-02-28"
+output: pdf_document
+---
+# **Green Wolf**
+
+Green Wolf Foods' Vegami is a standout product in the plant-based food market, offering a unique take on traditional salami through its innovative use of vegetables, greens, and mushrooms. The company, led by founder and CEO Alex Volkov, emphasizes the use of clean, recognizable ingredients, focusing on creating a vegetable-forward product that tastes great on its own rather than trying to mimic the taste of meat-based salami. This approach has led to the creation of unique flavors like Spinach and Kale, which are not found in any other product in the market​​.
+
+Launched at a vegan festival in August 2022, Vegami quickly gained popularity, selling out at multiple vegan festivals and subsequently at farmers' markets and a vegan cheese monger store in New York. The product's success is attributed to its distinctiveness and the agile development approach adopted by the company, which emphasizes early testing and learning from failures. Green Wolf Foods has built a solid customer base, with demand now exceeding manufacturing capacity​​.
+
+Green Wolf Foods' achievements have not gone unnoticed, as the company was honored as the best new/start-up business at the World Plant-Based Innovation Awards 2023. This accolade underscores the company's innovative contributions to the plant-based food industry and its commitment to sustainability and health-conscious eating
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(readxl)
+library(ggplot2)
+library(ggpubr)
+library(diffusion)
+```
+
+```{r}
+data1 <- read_excel("/Users/vrampapyan/Desktop/Marketing Analyses/Beyond Meat.xlsx")
+head(data1)
+
+```
+Approach No.1 
+By using NLS estimation
+```{r}
+sales = data1$`Net Revenue`
+t = 1:length(sales)
+bass_m = nls(sales ~ m*(((p+q)^2/p)*exp(-(p+q)*t))/(1+(q/p)*exp(-(p+q)*t))^2, start=c(list(m=sum(sales),p=0.02,q=0.4)))
+summary(bass_m)
+```
+So the estimated parameter are 
+m = 2223
+p = 0.004775
+q = 0.8634
+As p>q which means that innovaters are less than imitators, the shape of the distribution would be approximately bell shaped which is common, du to the fact that innovaters are less then imitaters.
+```{r}
+bass.f <- function(t,p,q){
+((p+q)^2/p)*exp(-(p+q)*t)/
+(1+(q/p)*exp(-(p+q)*t))^2
+}
+
+bass.F <- function(t,p,q){
+(1-exp(-(p+q)*t))/
+(1+(q/p)*exp(-(p+q)*t))
+}
+
+```
+
+```{r}
+data1$pred_sales1 = bass.f(1:7, p = 0.004775, q = 0.8634)*2223
+ggplot(data = data1, aes(x = `Years`, y = `Net Revenue`)) +
+  geom_bar(stat = 'identity') +
+  geom_point(mapping = aes(x=`Years`, y=pred_sales1), color = 'red')
+```
+Approach No. 2
+
+
+```{r}
+diff_m = diffusion(data1$`Net Revenue`)
+p2=round(diff_m$w,4)[1]
+q2=round(diff_m$w,4)[2]
+m2=round(diff_m$w,4)[3]
+diff_m
+```
+
+In absolute numbers, if we consider the lower estimate of 2% of the US population and the current US population of approximately 330 million, this would equate to about 6.6 million people who identify as vegan in the US. For the higher estimate of 6%, this would mean around 19.8 million vegans in the US. Let's take the estimate to 4%.
+For Fermi estimation 
+US population = 330 million (approximate figure for simplification)
+Percentage of vegans = 4%
+Number of vegans in the US = 330 million * 4% = 13.2 million
+
+```{r}
+data1$pred_sales2 = bass.f(1:7, p = p2, q = q2)*m2
+ggplot(data = data1, aes(x = `Years`, y = `Net Revenue`)) +
+  geom_bar(stat = 'identity') +
+  geom_point(mapping = aes(x=`Years`, y=pred_sales2), color = 'red')
+```
+Two estimation are simular and in my opinion not perfect, so those estimations can be suitable.
+
+Innovators = 0.025 * 13.2 = 0.33 millions
+
+Early Adopters = 0.135 * 13.2 = 1.782 millions
+
+Early Majority = 0.34 * 13.2 = 4.488 millions
+
+Late Majority =  0.34 * 13.2 = 4.488 millions
+
+Laggards = 0.16 * 13.2 = 2.112 millions
+
+
+# **References**
+
+A Better Veggie “Sausage” Green Wolf Vegami
+[Link text](https://time.com/collection/best-inventions-2023/6327196/green-wolf-vegami/)
+
+Beyond Meat
+[Link text](https://www.beyondmeat.com/en-US/)
+[Link text](https://www.statista.com/statistics/1067480/revenue-of-beyond-meat-worldwide/)
+[Link text](https://www.statista.com/forecasts/1304976/beyond-meat-meat-substitutes-brand-profile-in-the-united-states)
+[Link text](https://www.statista.com/statistics/1067536/revenue-of-beyond-meat-worldwide-by-distribution-channel/)
+[Link text](https://www.statista.com/statistics/1067583/adjusted-ebitda-of-beyond-meat-worldwide/)
+[Link text](https://www.statista.com/statistics/1067481/gross-profit-of-beyond-meat/)
+
+US Vegan 
+[Link text](https://veganbits.com/vegan-demographics/)
+[Link text](https://news.gallup.com/poll/510038/identify-vegetarian-vegan.aspx)
+[Link text](https://animalcharityevaluators.org/blog/is-the-percentage-of-vegetarians-and-vegans-in-the-u-s-increasing/)
+
+
